@@ -1,50 +1,66 @@
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.backends import default_backend
+import os
 
-# 1️ Generar claves RSA
-private_key = rsa.generate_private_key(
-    public_exponent=65537,
-    key_size=2048
-)
+# 1️ Generar clave secreta (32 bytes = AES-256)
+key = os.urandom(32)
 
-public_key = private_key.public_key()
+# 2️ Generar vector de inicialización
+iv = os.urandom(16)
 
-# 2️ Mensaje a cifrar
-mensaje = b"Hola Ingeniero Luis, este es un mensaje secreto"
+# 3️ Mensaje original
+mensaje = b"Hola David, mensaje secreto con AES"
 
-# 3️ Cifrar usando la clave pública
-ciphertext = public_key.encrypt(
-    mensaje,
-    padding.OAEP(
-        mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        algorithm=hashes.SHA256(),
-        label=None
-    )
-)
+# 4️ Aplicar padding al mensaje
+padder = padding.PKCS7(128).padder()
+mensaje_padded = padder.update(mensaje) + padder.finalize()
+
+# 5 Crear cifrador AES
+cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+encryptor = cipher.encryptor()
+
+# 6️ Cifrar mensaje
+ciphertext = encryptor.update(mensaje_padded) + encryptor.finalize()
 
 print("Mensaje cifrado:")
 print(ciphertext)
 
-# 4. Generar otra clave privada diferente
-other_private_key = rsa.generate_private_key(
-    public_exponent=65537,
-    key_size=2048
-)
+# 7 Descifrar mensaje
 
-# 5. Intentar descifrar con la clave privada incorrecta
+cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+decryptor = cipher.decryptor()
+
+mensaje_descifrado = decryptor.update(ciphertext) + decryptor.finalize()
+
+# 8 Quitar padding
+
+unpadder = padding.PKCS7(128).unpadder()
+mensaje_final = unpadder.update(mensaje_descifrado) + unpadder.finalize()
+
+
+print("\nMensaje descifrado:")
+print(mensaje_final.decode())
+
+'''
+
+# 7 Crear una clave incorrecta
+wrong_key = os.urandom(32)
+
+# 8. Intentar descifrar con la clave incorrecta
+cipher = Cipher(algorithms.AES(wrong_key), modes.CBC(iv), backend=default_backend())
+decryptor = cipher.decryptor()
+mensaje_descifrado = decryptor.update(ciphertext) + decryptor.finalize()
+
+# 9. Intentar quitar padding
 try:
-    plaintext = other_private_key.decrypt(
-        ciphertext,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None
-        )
-    )
+    unpadder = padding.PKCS7(128).unpadder()
+    mensaje_final = unpadder.update(mensaje_descifrado) + unpadder.finalize()
 
     print("\nMensaje descifrado:")
-    print(plaintext.decode())
-
+    print(mensaje_final.decode())
 except Exception as e:
-    print("\nNo se pudo descifrar con una clave privada diferente.")
+    print("\nNo se pudo descifrar correctamente con una clave incorrecta.")
     print("Error:", e)
+    
+'''
