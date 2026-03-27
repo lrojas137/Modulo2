@@ -148,7 +148,7 @@ Se utilizó OWASP ZAP para interceptar y analizar la respuesta HTTP/HTTPS del se
 
 ## Evidencias sugeridas
 
-Dentro de la carpeta `evidencias/` se encuandra el documento en PDF para visualizar los pasos con capturas de pantalla en el desarrollo de la actividad`
+Dentro de la carpeta `evidencias/` se encuentra los archivos index.html .htaccess y el documento en PDF para visualizar los pasos con capturas de pantalla en el desarrollo de la actividad`
 
 ---
 
